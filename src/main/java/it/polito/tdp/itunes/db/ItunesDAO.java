@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import it.polito.tdp.itunes.model.Album;
+import it.polito.tdp.itunes.model.Arco;
 import it.polito.tdp.itunes.model.Artist;
 import it.polito.tdp.itunes.model.Genre;
 import it.polito.tdp.itunes.model.MediaType;
@@ -130,6 +131,60 @@ public class ItunesDAO {
 
 			while (res.next()) {
 				result.add(new MediaType(res.getInt("MediaTypeId"), res.getString("Name")));
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		return result;
+	}
+
+	public List<Track> getTrackbyGenre(int idGenre){
+		final String sql = "SELECT * "
+				+ "FROM track t "
+				+ "WHERE t.GenreId=?";
+		List<Track> result = new ArrayList<Track>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, idGenre);
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				result.add(new Track(res.getInt("TrackId"), res.getString("Name"), 
+						res.getString("Composer"), res.getInt("Milliseconds"), 
+						res.getInt("Bytes"),res.getDouble("UnitPrice")));
+			
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		return result;
+		
+	}
+	
+	public List<Arco> getArchi(int idGenre){
+		final String sql = "SELECT t1.TrackId t1, t2.TrackId t2, ABS(t1.Milliseconds-t2.Milliseconds) AS peso "
+				+ "FROM track t1, track t2 "
+				+ "WHERE t1.TrackId<t2.TrackId AND t1.MediaTypeId=t2.MediaTypeId "
+				+ "AND t1.GenreId=? AND t1.GenreId=t2.GenreId "
+				+ "GROUP BY t1.TrackId,t2.TrackId";
+		List<Arco> result = new ArrayList<>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, idGenre);
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				Arco a=new Arco(res.getInt("t1"),res.getInt("t2"),res.getDouble("peso"));
+				result.add(a);
+			
 			}
 			conn.close();
 		} catch (SQLException e) {
